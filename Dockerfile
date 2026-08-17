@@ -1,12 +1,12 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-WORKDIR /app
+WORKDIR /workspaces/daniel
 
 # Install minimal runtime deps (none required for this simple project)
 ENV PYTHONUNBUFFERED=1
 
 # Copy project files
-COPY . /app
+COPY . /workspaces/daniel
 
 # Use a non-root user for safety
 RUN useradd --create-home appuser || true
