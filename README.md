@@ -1,5 +1,7 @@
 # daniel
 
+[![Docker Hub Publish](https://github.com/molmodise026j-sketch/daniel/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/molmodise026j-sketch/daniel/actions/workflows/docker-publish.yml)
+
 My first Python project where I'm learning the basics of Python 3.12.
 
 ## About
