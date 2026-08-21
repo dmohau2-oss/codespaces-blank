@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional
 import pandas as pd
 import numpy as np
-from src.config import Config
+from src.config import Config, PROJECT_ROOT
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class DataProcessor:
         if candidate.exists():
             return str(candidate)
 
-        sample_file = Path(Config.PROJECT_ROOT) / "data" / "sample_input.csv"
+        sample_file = Path(PROJECT_ROOT) / "data" / "sample_input.csv"
         if sample_file.exists():
             logger.warning("Configured input file was not found; using bundled sample data instead.")
             self.input_file = str(sample_file)

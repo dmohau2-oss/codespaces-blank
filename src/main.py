@@ -2,9 +2,15 @@
 
 import argparse
 import logging
+from pathlib import Path
 import sys
 
 import pandas as pd
+
+# Make direct execution (`python src/main.py`) use the same package imports
+# as module execution (`python -m src.main`).
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.config import Config
 from src.processor import DataProcessor
