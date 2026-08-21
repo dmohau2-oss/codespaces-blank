@@ -46,10 +46,10 @@ def test_processor_initialization():
     assert processor.input_file is not None
 
 
-def test_default_input_file_uses_sample_data_when_input_csv_missing():
+def test_default_input_file_uses_sample_data_when_input_csv_missing(tmp_path):
     """The app should fall back to sample_input.csv when no valid input file is configured."""
     original_input = os.environ.get("INPUT_FILE")
-    os.environ.pop("INPUT_FILE", None)
+    os.environ["INPUT_FILE"] = str(tmp_path / "missing.csv")
 
     try:
         importlib.reload(config_module)

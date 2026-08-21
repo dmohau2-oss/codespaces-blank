@@ -17,21 +17,12 @@ DATA_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 def resolve_input_file() -> str:
-    """Pick the best available input file, preferring valid configured paths and falling back to bundled sample data."""
+    """Pick a configured input file or fall back to bundled sample data."""
     configured = os.getenv("INPUT_FILE")
-    candidates = []
-
-    if configured:
-        candidates.append(configured)
-
-    default_input = str(DATA_DIR / "input.csv")
     sample_input = str(DATA_DIR / "sample_input.csv")
 
-    candidates.extend([default_input, sample_input])
-
-    for candidate in candidates:
-        if candidate and Path(candidate).exists():
-            return str(candidate)
+    if configured and Path(configured).exists():
+        return str(configured)
 
     return sample_input
 
