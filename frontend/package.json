@@ -1,0 +1,23 @@
+{
+  "name": "dataflow-dashboard",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "sync:etl": "node ./scripts/sync-pipeline-data.mjs",
+    "dev": "npm run sync:etl && vite",
+    "build": "npm run sync:etl && tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.10"
+  }
+}

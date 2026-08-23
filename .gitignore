@@ -8,3 +8,6 @@ __pycache__/
 htmlcov/
 output/*
 !output/.gitkeep
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo

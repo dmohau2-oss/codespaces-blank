@@ -7,6 +7,83 @@ import pandas as pd
 import numpy as np
 from src.config import Config, PROJECT_ROOT
 
+
+def build_dashboard_payload(
+    df: pd.DataFrame,
+    category: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+) -> dict:
+    """Build the dashboard payload for the frontend from a filtered DataFrame."""
+    filtered = df.copy()
+
+    if filtered.empty:
+        return {
+            "summary": {
+                "row_count": 0,
+                "total": 0.0,
+                "average": 0.0,
+                "min": 0.0,
+                "max": 0.0,
+                "median": 0.0,
+                "stddev": 0.0,
+                "categories": [],
+            },
+            "rows": [],
+            "categories": [],
+        }
+
+    if "date" in filtered.columns:
+        filtered["date"] = pd.to_datetime(filtered["date"])
+
+    if category:
+        filtered = filtered[filtered["category"].astype(str) == str(category)]
+
+    if "date" in filtered.columns:
+        if date_from:
+            filtered = filtered[filtered["date"] >= pd.Timestamp(date_from)]
+        if date_to:
+            filtered = filtered[filtered["date"] <= pd.Timestamp(date_to)]
+
+    if filtered.empty:
+        return {
+            "summary": {
+                "row_count": 0,
+                "total": 0.0,
+                "average": 0.0,
+                "min": 0.0,
+                "max": 0.0,
+                "median": 0.0,
+                "stddev": 0.0,
+                "categories": [],
+            },
+            "rows": [],
+            "categories": [],
+        }
+
+    value_column = "value" if "value" in filtered.columns else filtered.select_dtypes(include=[np.number]).columns[0]
+    numeric = filtered[value_column].astype(float)
+    summary = {
+        "row_count": int(len(filtered)),
+        "total": float(numeric.sum()),
+        "average": float(numeric.mean()),
+        "min": float(numeric.min()),
+        "max": float(numeric.max()),
+        "median": float(numeric.median()),
+        "stddev": float(numeric.std(ddof=1)) if len(numeric) > 1 else 0.0,
+        "categories": sorted(filtered["category"].astype(str).unique().tolist()),
+    }
+
+    rows = filtered.copy()
+    if "date" in rows.columns:
+        rows["date"] = rows["date"].dt.strftime("%Y-%m-%d")
+
+    return {
+        "summary": summary,
+        "rows": rows.to_dict(orient="records"),
+        "categories": summary["categories"],
+    }
+
 logger = logging.getLogger(__name__)
 
 
@@ -111,6 +188,21 @@ class DataProcessor:
         logger.info(f"Removed rows with missing values: {len(df)} rows remaining")
         
         return df
+
+    def enrich_with_dates(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Add a date column so the dashboard can filter by date ranges."""
+        enriched = df.copy()
+        if enriched.empty:
+            enriched["date"] = pd.to_datetime([])
+            return enriched
+
+        if "date" not in enriched.columns:
+            start_day = pd.Timestamp.today().normalize() - pd.Timedelta(days=max(len(enriched) - 1, 0))
+            enriched["date"] = pd.date_range(start=start_day, periods=len(enriched), freq="D")
+        else:
+            enriched["date"] = pd.to_datetime(enriched["date"])
+
+        return enriched
     
     def summarise_data(self, df: pd.DataFrame, group_by: Optional[str] = None) -> dict:
         """Compute totals and averages for numeric columns and optionally group by a category column."""
@@ -218,6 +310,7 @@ class DataProcessor:
         if clean:
             df = self.clean_data(df)
 
+        df = self.enrich_with_dates(df)
         self.save_data(df, output_file=output_file)
 
         logger.info("Processing pipeline completed")

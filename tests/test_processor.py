@@ -214,3 +214,37 @@ def test_save_data(sample_data):
         loaded = pd.read_csv(output_path)
         assert len(loaded) == len(sample_data)
         assert list(loaded.columns) == list(sample_data.columns)
+
+
+def test_enrich_with_dates_adds_date_column():
+    """Processed data should include a date column for dashboard filtering."""
+    processor = DataProcessor()
+    df = pd.DataFrame({"name": ["Alice", "Bob"], "value": [10.5, 20.3], "category": ["A", "B"]})
+
+    enriched = processor.enrich_with_dates(df)
+
+    assert "date" in enriched.columns
+    assert pd.api.types.is_datetime64_any_dtype(enriched["date"])
+
+
+def test_build_dashboard_payload_filters_by_category_and_date():
+    """Dashboard payload should filter rows by category and a date range."""
+    from src.processor import build_dashboard_payload
+
+    df = pd.DataFrame({
+        "name": ["Alice", "Bob", "Charlie", "Dana"],
+        "value": [10.0, 20.0, 30.0, 40.0],
+        "category": ["A", "B", "A", "B"],
+        "date": pd.to_datetime([
+            "2026-08-01",
+            "2026-08-02",
+            "2026-08-03",
+            "2026-08-04",
+        ]),
+    })
+
+    payload = build_dashboard_payload(df, category="A", date_from="2026-08-01", date_to="2026-08-03")
+
+    assert payload["summary"]["row_count"] == 2
+    assert payload["rows"][0]["category"] == "A"
+    assert all(row["category"] == "A" for row in payload["rows"])

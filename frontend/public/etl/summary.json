@@ -1,0 +1,40 @@
+{
+  "row_count": 8,
+  "value_column": "value",
+  "total": 162.5,
+  "average": 20.3125,
+  "min": 10.5,
+  "max": 30.1,
+  "median": 19.9,
+  "stddev": 5.9033737327541305,
+  "grouped_by": "category",
+  "group_summary": {
+    "A": {
+      "total": 45.0,
+      "average": 15.0,
+      "median": 15.8,
+      "min": 10.5,
+      "max": 18.7,
+      "stddev": 4.158124577258358,
+      "count": 3
+    },
+    "B": {
+      "total": 69.9,
+      "average": 23.3,
+      "median": 20.3,
+      "min": 19.5,
+      "max": 30.1,
+      "stddev": 5.902541825349482,
+      "count": 3
+    },
+    "C": {
+      "total": 47.599999999999994,
+      "average": 23.799999999999997,
+      "median": 23.799999999999997,
+      "min": 22.4,
+      "max": 25.2,
+      "stddev": 1.9798989873223323,
+      "count": 2
+    }
+  }
+}

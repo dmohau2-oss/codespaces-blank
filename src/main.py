@@ -47,7 +47,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Process CSV data and print a summary.")
     parser.add_argument("--input", dest="input_file", default=Config.INPUT_FILE, help="Path to the input CSV file")
     parser.add_argument("--output", dest="output_file", default=Config.OUTPUT_FILE, help="Path to the output CSV file")
-    parser.add_argument("--group-by", dest="group_by", default=None, help="Optional column to group summary totals and averages by")
+    parser.add_argument("--group-by", dest="group_by", default=None, help="Optional     Commit: 61e9bb6 Fix data processing CLI entry pointcolumn to group summary totals and averages by")
     parser.add_argument("--no-clean", action="store_true", help="Skip data cleaning steps")
     parser.add_argument("--summary-json", dest="summary_json", default=None, help="Optional path to export the summary as JSON")
     parser.add_argument("--log-file", dest="log_file", default=None, help="Optional file path for application logging")
@@ -86,8 +86,11 @@ def main(argv=None):
             output_dir = args.output_json.rsplit("/", 1)[0] if "/" in args.output_json else "."
             import os
             os.makedirs(output_dir, exist_ok=True)
+            export_df = result_df.copy()
+            if "date" in export_df.columns:
+                export_df["date"] = export_df["date"].dt.strftime("%Y-%m-%d")
             with open(args.output_json, "w", encoding="utf-8") as fh:
-                json.dump(result_df.to_dict(orient="records"), fh, indent=2)
+                json.dump(export_df.to_dict(orient="records"), fh, indent=2)
             print(f"Processed data exported to JSON: {args.output_json}")
 
         summary = processor.summarise_data(result_df, group_by=args.group_by if args.group_by in result_df.columns else None)
