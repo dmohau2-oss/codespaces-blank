@@ -47,7 +47,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Process CSV data and print a summary.")
     parser.add_argument("--input", dest="input_file", default=Config.INPUT_FILE, help="Path to the input CSV file")
     parser.add_argument("--output", dest="output_file", default=Config.OUTPUT_FILE, help="Path to the output CSV file")
-    parser.add_argument("--group-by", dest="group_by", default=None, help="Optional     Commit: 61e9bb6 Fix data processing CLI entry pointcolumn to group summary totals and averages by")
+    parser.add_argument("--group-by", dest="group_by", default=None, help="Optional column to group summary totals and averages by")
     parser.add_argument("--no-clean", action="store_true", help="Skip data cleaning steps")
     parser.add_argument("--summary-json", dest="summary_json", default=None, help="Optional path to export the summary as JSON")
     parser.add_argument("--log-file", dest="log_file", default=None, help="Optional file path for application logging")

@@ -24,6 +24,8 @@ type ChartPoint = {
   value: number;
 };
 
+const dashboardEndpoint = import.meta.env.DEV ? '/api/dashboard' : '/dashboard';
+
 const formatNumber = (value: number, digits = 2) => new Intl.NumberFormat('en-US', {
   maximumFractionDigits: digits,
   minimumFractionDigits: digits,
@@ -109,7 +111,7 @@ function App() {
       if (dateFrom) params.set('date_from', dateFrom);
       if (dateTo) params.set('date_to', dateTo);
 
-      const response = await fetch(`/api/dashboard?${params.toString()}`);
+      const response = await fetch(`${dashboardEndpoint}?${params.toString()}`);
       if (!response.ok) {
         throw new Error('Unable to load ETL dashboard data from the backend.');
       }
