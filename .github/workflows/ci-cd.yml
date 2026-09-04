@@ -76,3 +76,23 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Pull published image for health check
+        if: env.DOCKERHUB_USERNAME != ''
+        run: docker pull "docker.io/${DOCKERHUB_USERNAME}/${IMAGE_NAME}:sha-${GITHUB_SHA::7}"
+
+      - name: Check published API health
+        if: env.DOCKERHUB_USERNAME != ''
+        run: |
+          image="docker.io/${DOCKERHUB_USERNAME}/${IMAGE_NAME}:sha-${GITHUB_SHA::7}"
+          container_id=$(docker run -d -p 8000:8000 "$image")
+          cleanup() { docker rm -f "$container_id" >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          for attempt in {1..15}; do
+            if curl --fail --silent http://127.0.0.1:8000/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs "$container_id"
+          exit 1

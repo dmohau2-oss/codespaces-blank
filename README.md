@@ -239,7 +239,15 @@ Pull and run the published image with:
 
 ```bash
 docker pull <your-username>/data-processing-app:latest
-docker run --rm <your-username>/data-processing-app:latest --help
+docker run --rm -p 8000:8000 <your-username>/data-processing-app:latest
+```
+
+The container serves the API on port 8000 and reports its readiness at
+`http://localhost:8000/health`. To run the batch CLI from the image instead:
+
+```bash
+docker run --rm --entrypoint python <your-username>/data-processing-app:latest \
+  -m src.main --input data/sample_input.csv --output output/processed.csv
 ```
 
 ## Data Format
