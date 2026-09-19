@@ -43,6 +43,21 @@ python -m src.main --input data/sample_input.csv --output output/processed.csv
 
 This runs the processing pipeline, validates the data, and writes the cleaned results to the output file.
 
+## Local API Server
+
+The project also exposes a FastAPI dashboard API for local development and browser testing.
+
+```bash
+uvicorn src.api:app --reload --host 0.0.0.0 --port 8000
+```
+cd /workspaces/codespaces-blank && pytest -q && uvicorn src.api:app --host 127.0.0.1 --port 8000 >/tmp/data_app.log 2>&1 & sleep 3 && curl -s http://127.0.0.1:8000/health && echo && curl -s "http://127.0.0.1:8000/dashboard?category=A" | head -c 400 && echo
+Then verify the app is responding:
+
+```bash
+curl http://127.0.0.1:8000/health
+curl "http://127.0.0.1:8000/dashboard?category=A"
+```
+
 ## Installation
 
 1. **Clone or download the project**

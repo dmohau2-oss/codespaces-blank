@@ -4,6 +4,21 @@ import ReactDOM from 'react-dom/client';
 import './styles.css';
 
 type Signal = { id: number; note: string; mood: string; createdAt: string; color: string };
+type DashboardRow = { id: number; name: string; value: number; category: string; date?: string };
+type DashboardPayload = {
+  summary: {
+    row_count: number;
+    total: number;
+    average: number;
+    min: number;
+    max: number;
+    median: number;
+    stddev: number;
+    categories: string[];
+  };
+  rows: DashboardRow[];
+  categories: string[];
+};
 const moods = [
   { name: 'Bright', color: '#f6c453' },
   { name: 'Soft', color: '#8ec5a4' },
@@ -52,7 +67,32 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [universityQuery, setUniversityQuery] = useState('');
+  const [liveDashboard, setLiveDashboard] = useState<DashboardPayload | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   useEffect(() => localStorage.setItem('small-signals', JSON.stringify(signals)), [signals]);
+  useEffect(() => {
+    let ignore = false;
+    const loadDashboard = async () => {
+      try {
+        const response = await fetch('/api/dashboard?category=A');
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        const payload = (await response.json()) as DashboardPayload;
+        if (!ignore) {
+          setLiveDashboard(payload);
+          setApiError(null);
+        }
+      } catch (error) {
+        if (!ignore) {
+          setApiError(error instanceof Error ? error.message : 'Unable to connect to the dashboard API');
+        }
+      }
+    };
+
+    void loadDashboard();
+    return () => { ignore = true; };
+  }, []);
 
   const resetForm = () => { setNote(''); setEditingId(null); setMood(moods[0]); };
   const saveSignal = (event: FormEvent) => {
@@ -101,6 +141,24 @@ function App() {
         <form className="capture" onSubmit={saveSignal}><p className="kicker">{editingId === null ? 'Add to the garden' : 'Shape this signal'}</p><label htmlFor="note">What is glimmering?</label><textarea id="note" value={note} onChange={(event) => setNote(event.target.value)} placeholder="A detail worth keeping..." maxLength={140} /><div className="form-footer"><div className="mood-picker" aria-label="Choose a feeling">{moods.map((option) => <button type="button" className={mood.name === option.name ? 'selected' : ''} key={option.name} onClick={() => setMood(option)}><span style={{ background: option.color }} />{option.name}</button>)}</div><button className="send" type="submit">{editingId === null ? 'Plant it' : 'Save changes'} <span>-&gt;</span></button>{editingId !== null && <button className="cancel" type="button" onClick={resetForm}>Cancel editing</button>}</div></form>
       </section>
       <section className="bottom-grid"><div className="recent panel"><div className="section-heading"><h2>Recent signals</h2><button onClick={() => setActiveView('archive')}>See all -&gt;</button></div>{signals.slice(0, 3).map((signal) => <article className="signal-row" key={signal.id}><span className="dot" style={{ background: signal.color }} /><div><p>{signal.note}</p><small>{signal.mood} <span>/</span> {formatDate(signal.createdAt)}</small></div></article>)}</div><div className="rhythm panel"><div className="section-heading"><h2>Your rhythm</h2><span className="period">this month</span></div><div className="rhythm-number">{Math.min(signals.length + 2, 12)}<span> days noticing</span></div><div className="bars">{[3, 5, 4, 7, 6, 9, 8, 10, 7, 11, 9, 12, 10, 13].map((height, index) => <i key={index} style={{ height: `${height * 4}px` }} />)}</div><p className="rhythm-caption">A little attention, every day, adds up.</p></div><div className="weather panel"><div className="section-heading"><h2>Signal weather</h2><span className="period">a reading</span></div><div className="weather-mark">*</div><p className="reflection">{reflection}</p><button className="refresh-reading" onClick={() => setReflectionSeed((current) => current + 1)}>Read the sky again -&gt;</button></div></section>
+      <section className="live-panel panel">
+        <div className="section-heading"><h2>Live ETL dashboard</h2><span className="period">{apiError ? 'offline' : liveDashboard ? 'connected' : 'loading...'}</span></div>
+        {apiError ? <p className="live-state">Unable to reach the API: {apiError}</p> : liveDashboard ? (
+          <>
+            <div className="live-summary"><strong>{liveDashboard.summary.row_count}</strong><span>records</span></div>
+            <div className="live-metrics">
+              <div><label>Total</label><span>{liveDashboard.summary.total.toFixed(1)}</span></div>
+              <div><label>Average</label><span>{liveDashboard.summary.average.toFixed(1)}</span></div>
+              <div><label>Categories</label><span>{liveDashboard.categories.join(', ') || '—'}</span></div>
+            </div>
+            <ul className="live-rows">
+              {liveDashboard.rows.slice(0, 4).map((row) => (
+                <li key={row.id}><span>{row.name}</span><em>{row.category}</em><strong>{row.value}</strong></li>
+              ))}
+            </ul>
+          </>
+        ) : <p className="live-state">Loading dashboard data from the API…</p>}
+      </section>
     </> : <section className="archive panel"><div className="section-heading"><h2>Everything you noticed</h2><span className="period">{filteredSignals.length} shown</span></div><div className="archive-tools"><input aria-label="Search signals" placeholder="Search your signals..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} /><select aria-label="Filter by mood" value={filterMood} onChange={(event) => setFilterMood(event.target.value)}><option>All moods</option>{moods.map((option) => <option key={option.name}>{option.name}</option>)}</select><select aria-label="Sort signals" value={sortOrder} onChange={(event) => setSortOrder(event.target.value as 'newest' | 'oldest')}><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select><div><button onClick={exportJson}>Export JSON</button><button onClick={exportCsv}>Export CSV</button></div></div>{filteredSignals.length ? filteredSignals.map((signal) => <article className="signal-row archive-row" key={signal.id}><span className="dot" style={{ background: signal.color }} /><div><p>{signal.note}</p><small>{signal.mood} <span>/</span> {formatDate(signal.createdAt)}</small></div><div className="row-actions"><button onClick={() => editSignal(signal)} aria-label={`Edit ${signal.note}`}>Edit</button><button onClick={() => deleteSignal(signal.id)} aria-label={`Delete ${signal.note}`}>Delete</button></div></article>) : <p className="no-results">Nothing matches that search yet.</p>}</section>}
     <section className="sa-universities" id="south-africa"><div className="section-heading"><div><p className="kicker">Study closer to home</p><h2>South Africa's universities</h2></div><span className="period">{matchingUniversities.length} of {southAfricanUniversities.length}</span></div><div className="university-tools"><input aria-label="Search South African universities" placeholder="Search by university, province, or subject" value={universityQuery} onChange={(event) => setUniversityQuery(event.target.value)} /><span>Explore the places shaping what comes next.</span></div><div className="university-grid">{matchingUniversities.map((university, index) => <article className="university-card" key={university.short}><span className="university-number">0{index + 1}</span><div className="university-monogram">{university.short}</div><h3>{university.name}</h3><p>{university.province}</p><small>{university.focus}</small><a href={university.url} target="_blank" rel="noreferrer">Visit university <span>↗</span></a></article>)}</div>{matchingUniversities.length === 0 && <p className="university-empty">No universities match that search.</p>}</section>
     <footer><a className="wordmark" href="#top">NORTHSTAR<span>UNIVERSITY</span></a><span>© 2026 Northstar University</span><span>Made for what comes next.</span></footer>
