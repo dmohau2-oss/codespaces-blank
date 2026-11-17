@@ -203,6 +203,28 @@ pytest --cov=src tests/
 pytest tests/test_processor.py
 ```
 
+## Production deployment
+
+The project is deployed locally and can be launched with the bundled deploy script:
+
+```bash
+./deploy.sh
+```
+
+This script creates or reuses the virtual environment, installs Python dependencies, builds the frontend, regenerates the processed CSV, and starts the API on port 8000.
+
+The live app is available at:
+
+```text
+http://127.0.0.1:8000
+```
+
+To verify the service is running:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
 ## Docker
 
 Build the image locally:
