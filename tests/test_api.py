@@ -39,3 +39,21 @@ def test_dashboard_endpoint_filters_by_category_and_date(monkeypatch):
     assert response.json()["summary"]["row_count"] == 1
     assert response.json()["summary"]["total"] == 10.0
     assert response.json()["rows"][0]["name"] == "Alice"
+
+
+def test_api_dashboard_alias_returns_dashboard_data(monkeypatch):
+    """The frontend API path should return the same dashboard payload."""
+    data = pd.DataFrame(
+        {
+            "name": ["Alice"],
+            "value": [10.0],
+            "category": ["A"],
+            "date": pd.to_datetime(["2026-08-01"]),
+        }
+    )
+    monkeypatch.setattr(DataProcessor, "load_data", lambda self: data)
+
+    response = client.get("/api/dashboard", params={"category": "A"})
+
+    assert response.status_code == 200
+    assert response.json()["summary"]["row_count"] == 1

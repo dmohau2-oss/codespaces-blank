@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Optional
 
 import pandas as pd
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from src.processor import DataProcessor, build_dashboard_payload
 
@@ -20,6 +23,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+frontend_dist = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+if frontend_dist.is_dir():
+    app.mount("/assets", StaticFiles(directory=frontend_dist / "assets"), name="assets")
+
+
+@app.get("/")
+def frontend() -> FileResponse:
+    return FileResponse(frontend_dist / "index.html")
+
 
 @app.get("/health")
 def health() -> dict:
@@ -27,6 +39,7 @@ def health() -> dict:
 
 
 @app.get("/dashboard")
+@app.get("/api/dashboard")
 def dashboard(
     category: Optional[str] = Query(default=None),
     date_from: Optional[str] = Query(default=None),
