@@ -41,6 +41,14 @@ const southAfricanUniversities = [
   { name: 'Rhodes University', short: 'RU', province: 'Eastern Cape', focus: 'Journalism, science, humanities', url: 'https://www.ru.ac.za/' },
   { name: 'University of Johannesburg', short: 'UJ', province: 'Gauteng', focus: 'Technology, design, business', url: 'https://www.uj.ac.za/' },
   { name: 'North-West University', short: 'NWU', province: 'North West', focus: 'Education, law, health science', url: 'https://www.nwu.ac.za/' },
+  { name: 'Cape Peninsula University of Technology', short: 'CPUT', province: 'Western Cape', focus: 'Technology, design, applied sciences', url: 'https://www.cput.ac.za/' },
+  { name: 'Durban University of Technology', short: 'DUT', province: 'KwaZulu-Natal', focus: 'Engineering, health, business', url: 'https://www.dut.ac.za/' },
+  { name: 'University of South Africa', short: 'UNISA', province: 'Gauteng', focus: 'Open distance learning, law, education', url: 'https://www.unisa.ac.za/' },
+  { name: 'Tshwane University of Technology', short: 'TUT', province: 'Gauteng', focus: 'Technology, engineering, business', url: 'https://www.tut.ac.za/' },
+  { name: 'Walter Sisulu University', short: 'WSU', province: 'Eastern Cape', focus: 'Health sciences, education, community development', url: 'https://www.wsu.ac.za/' },
+  { name: 'University of Fort Hare', short: 'UFH', province: 'Eastern Cape', focus: 'Humanities, law, agriculture', url: 'https://www.ufh.ac.za/' },
+  { name: 'Central University of Technology', short: 'CUT', province: 'Free State', focus: 'Technology, engineering, business', url: 'https://www.cut.ac.za/' },
+  { name: 'Mangosuthu University of Technology', short: 'MUT', province: 'KwaZulu-Natal', focus: 'Technology, engineering, entrepreneurship', url: 'https://www.mut.ac.za/' },
 ];
 
 function downloadFile(name: string, content: string, type: string) {
@@ -67,6 +75,8 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [universityQuery, setUniversityQuery] = useState('');
+  const [dashboardCategory, setDashboardCategory] = useState('A');
+  const [dashboardRefresh, setDashboardRefresh] = useState(0);
   const [liveDashboard, setLiveDashboard] = useState<DashboardPayload | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   useEffect(() => localStorage.setItem('small-signals', JSON.stringify(signals)), [signals]);
@@ -74,7 +84,7 @@ function App() {
     let ignore = false;
     const loadDashboard = async () => {
       try {
-        const response = await fetch('/api/dashboard?category=A');
+        const response = await fetch(`/api/dashboard?category=${encodeURIComponent(dashboardCategory)}`);
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`);
         }
@@ -92,7 +102,7 @@ function App() {
 
     void loadDashboard();
     return () => { ignore = true; };
-  }, []);
+  }, [dashboardCategory, dashboardRefresh]);
 
   const resetForm = () => { setNote(''); setEditingId(null); setMood(moods[0]); };
   const saveSignal = (event: FormEvent) => {
@@ -142,25 +152,80 @@ function App() {
       </section>
       <section className="bottom-grid"><div className="recent panel"><div className="section-heading"><h2>Recent signals</h2><button onClick={() => setActiveView('archive')}>See all -&gt;</button></div>{signals.slice(0, 3).map((signal) => <article className="signal-row" key={signal.id}><span className="dot" style={{ background: signal.color }} /><div><p>{signal.note}</p><small>{signal.mood} <span>/</span> {formatDate(signal.createdAt)}</small></div></article>)}</div><div className="rhythm panel"><div className="section-heading"><h2>Your rhythm</h2><span className="period">this month</span></div><div className="rhythm-number">{Math.min(signals.length + 2, 12)}<span> days noticing</span></div><div className="bars">{[3, 5, 4, 7, 6, 9, 8, 10, 7, 11, 9, 12, 10, 13].map((height, index) => <i key={index} style={{ height: `${height * 4}px` }} />)}</div><p className="rhythm-caption">A little attention, every day, adds up.</p></div><div className="weather panel"><div className="section-heading"><h2>Signal weather</h2><span className="period">a reading</span></div><div className="weather-mark">*</div><p className="reflection">{reflection}</p><button className="refresh-reading" onClick={() => setReflectionSeed((current) => current + 1)}>Read the sky again -&gt;</button></div></section>
       <section className="live-panel panel">
-        <div className="section-heading"><h2>Live ETL dashboard</h2><span className="period">{apiError ? 'offline' : liveDashboard ? 'connected' : 'loading...'}</span></div>
-        {apiError ? <p className="live-state">Unable to reach the API: {apiError}</p> : liveDashboard ? (
-          <>
-            <div className="live-summary"><strong>{liveDashboard.summary.row_count}</strong><span>records</span></div>
-            <div className="live-metrics">
-              <div><label>Total</label><span>{liveDashboard.summary.total.toFixed(1)}</span></div>
-              <div><label>Average</label><span>{liveDashboard.summary.average.toFixed(1)}</span></div>
-              <div><label>Categories</label><span>{liveDashboard.categories.join(', ') || '—'}</span></div>
-            </div>
-            <ul className="live-rows">
-              {liveDashboard.rows.slice(0, 4).map((row) => (
-                <li key={row.id}><span>{row.name}</span><em>{row.category}</em><strong>{row.value}</strong></li>
+        <div className="section-heading live-header">
+          <h2>Live ETL dashboard</h2>
+          <div className="live-toolbar">
+            <div className="category-chips" aria-label="Dashboard categories">
+              {['A', 'B', 'C'].map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  className={dashboardCategory === category ? 'selected' : ''}
+                  onClick={() => setDashboardCategory(category)}
+                >
+                  {category}
+                </button>
               ))}
-            </ul>
+            </div>
+            <button type="button" className="refresh-button" onClick={() => setDashboardRefresh((value) => value + 1)}>Refresh</button>
+          </div>
+        </div>
+
+        {apiError ? (
+          <p className="live-state">Unable to reach the API: {apiError}</p>
+        ) : liveDashboard ? (
+          <>
+            <div className="live-summary-row">
+              <div className="live-summary-card accent">
+                <label>Rows</label>
+                <strong>{liveDashboard.summary.row_count}</strong>
+              </div>
+              <div className="live-summary-card">
+                <label>Total</label>
+                <strong>{liveDashboard.summary.total.toFixed(1)}</strong>
+              </div>
+              <div className="live-summary-card">
+                <label>Average</label>
+                <strong>{liveDashboard.summary.average.toFixed(1)}</strong>
+              </div>
+            </div>
+
+            <div className="live-metrics">
+              <div><label>Min</label><span>{liveDashboard.summary.min.toFixed(1)}</span></div>
+              <div><label>Max</label><span>{liveDashboard.summary.max.toFixed(1)}</span></div>
+              <div><label>Median</label><span>{liveDashboard.summary.median.toFixed(1)}</span></div>
+              <div><label>Std dev</label><span>{liveDashboard.summary.stddev.toFixed(1)}</span></div>
+            </div>
+
+            <div className="live-table-wrap">
+              <table className="live-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Value</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {liveDashboard.rows.slice(0, 5).map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.name}</td>
+                      <td><span className="metric-tag">{row.category}</span></td>
+                      <td>{row.value}</td>
+                      <td>{row.date ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
-        ) : <p className="live-state">Loading dashboard data from the API…</p>}
+        ) : (
+          <p className="live-state">Loading dashboard data from the API…</p>
+        )}
       </section>
     </> : <section className="archive panel"><div className="section-heading"><h2>Everything you noticed</h2><span className="period">{filteredSignals.length} shown</span></div><div className="archive-tools"><input aria-label="Search signals" placeholder="Search your signals..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} /><select aria-label="Filter by mood" value={filterMood} onChange={(event) => setFilterMood(event.target.value)}><option>All moods</option>{moods.map((option) => <option key={option.name}>{option.name}</option>)}</select><select aria-label="Sort signals" value={sortOrder} onChange={(event) => setSortOrder(event.target.value as 'newest' | 'oldest')}><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select><div><button onClick={exportJson}>Export JSON</button><button onClick={exportCsv}>Export CSV</button></div></div>{filteredSignals.length ? filteredSignals.map((signal) => <article className="signal-row archive-row" key={signal.id}><span className="dot" style={{ background: signal.color }} /><div><p>{signal.note}</p><small>{signal.mood} <span>/</span> {formatDate(signal.createdAt)}</small></div><div className="row-actions"><button onClick={() => editSignal(signal)} aria-label={`Edit ${signal.note}`}>Edit</button><button onClick={() => deleteSignal(signal.id)} aria-label={`Delete ${signal.note}`}>Delete</button></div></article>) : <p className="no-results">Nothing matches that search yet.</p>}</section>}
-    <section className="sa-universities" id="south-africa"><div className="section-heading"><div><p className="kicker">Study closer to home</p><h2>South Africa's universities</h2></div><span className="period">{matchingUniversities.length} of {southAfricanUniversities.length}</span></div><div className="university-tools"><input aria-label="Search South African universities" placeholder="Search by university, province, or subject" value={universityQuery} onChange={(event) => setUniversityQuery(event.target.value)} /><span>Explore the places shaping what comes next.</span></div><div className="university-grid">{matchingUniversities.map((university, index) => <article className="university-card" key={university.short}><span className="university-number">0{index + 1}</span><div className="university-monogram">{university.short}</div><h3>{university.name}</h3><p>{university.province}</p><small>{university.focus}</small><a href={university.url} target="_blank" rel="noreferrer">Visit university <span>↗</span></a></article>)}</div>{matchingUniversities.length === 0 && <p className="university-empty">No universities match that search.</p>}</section>
+    <section className="sa-universities" id="south-africa"><div className="section-heading"><div><p className="kicker">Study closer to home</p><h2>South Africa's public universities & colleges</h2></div><span className="period">{matchingUniversities.length} of {southAfricanUniversities.length}</span></div><div className="university-tools"><input aria-label="Search South African universities" placeholder="Search by university, province, or subject" value={universityQuery} onChange={(event) => setUniversityQuery(event.target.value)} /><span>Explore the places shaping what comes next.</span></div><div className="university-grid">{matchingUniversities.map((university, index) => <article className="university-card" key={university.short}><span className="university-number">0{index + 1}</span><div className="university-monogram">{university.short}</div><h3>{university.name}</h3><p>{university.province}</p><small>{university.focus}</small><a href={university.url} target="_blank" rel="noreferrer">Visit university <span>↗</span></a></article>)}</div>{matchingUniversities.length === 0 && <p className="university-empty">No universities match that search.</p>}</section>
     <footer><a className="wordmark" href="#top">NORTHSTAR<span>UNIVERSITY</span></a><span>© 2026 Northstar University</span><span>Made for what comes next.</span></footer>
   </main>;
 }
